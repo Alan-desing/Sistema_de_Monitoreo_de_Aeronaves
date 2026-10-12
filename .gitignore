@@ -1,3 +1,6 @@
-
-
-pruebas/opensky/credentials.json(esta subido en el drive en la carpeta "Archivos", no se sube al repositorio)
+.env
+*.sqlite3
+__pycache__/
+*.pyc
+node_modules/
+dist/

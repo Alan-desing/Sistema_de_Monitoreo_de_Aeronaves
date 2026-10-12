@@ -1,0 +1,29 @@
+/* Estilos propios mínimos: el resto es Bootstrap 5. */
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
