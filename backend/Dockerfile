@@ -26,4 +26,7 @@ USER app
 
 EXPOSE 8000
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Se ejecuta con sh para no depender del permiso de ejecución del archivo:
+# el código se monta desde el host y ese permiso se pierde fácil al pasar por
+# git (commits desde Windows, core.fileMode=false) o al copiar el proyecto.
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]

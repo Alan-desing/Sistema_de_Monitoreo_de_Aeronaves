@@ -432,6 +432,8 @@ Conexiones rechazadas: sin sesión, usuario desactivado u origen no permitido. A
 |---|---|
 | La web no abre | `docker compose ps`: los dos servicios deben estar `Up`. Ver `docker compose logs backend frontend`. |
 | El backend no arranca | El log explica la causa: falta `DJANGO_SECRET_KEY`, o hay un valor inicial inválido en el `.env`. |
+| `exec: "/app/entrypoint.sh": permission denied` | Versión vieja del `Dockerfile`: el script perdió el permiso de ejecución (pasa al copiarlo por git). Correr `chmod +x backend/entrypoint.sh`, o actualizar el `Dockerfile`, que ahora lo ejecuta con `sh` y no depende de ese permiso, y reconstruir con `docker compose up --build`. |
+| `/bin/sh^M` o `entrypoint.sh: not found` | El script quedó con fin de línea de Windows (CRLF). El `.gitattributes` lo evita en clones nuevos; en uno existente, `sed -i 's/\r$//' backend/entrypoint.sh`. |
 | "Reconectando…" permanente | Backend caído o reiniciándose: `docker compose logs -f backend`. |
 | "adsb.fi sin respuesta" | Sin internet, adsb.fi caído o limitado (429). El monitor reintenta solo; el detalle está en el log. |
 | No aparecen aeronaves | Puede que no haya tráfico en el área. Revisar el log por errores de adsb.fi y que `MONITOR_ENABLED=true`. |
