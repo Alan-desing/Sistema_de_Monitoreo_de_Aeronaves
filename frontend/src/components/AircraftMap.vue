@@ -113,6 +113,29 @@ function syncMarkers() {
   }
 }
 
+// Brújula fija: el mapa no rota, así que el norte siempre queda arriba.
+const COMPASS_SVG = `<svg viewBox="-26 -26 52 52" aria-hidden="true">
+  <polygon points="0,-11 3.5,0 -3.5,0" fill="#dc3545" />
+  <polygon points="0,11 3.5,0 -3.5,0" fill="#adb5bd" />
+  <circle r="1.8" fill="#212529" />
+  <text y="-17" class="north">N</text>
+  <text x="17">E</text>
+  <text y="17">S</text>
+  <text x="-17">O</text>
+</svg>`
+
+const CompassControl = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd() {
+    const div = L.DomUtil.create('div', 'leaflet-bar compass-control')
+    div.title = 'Norte arriba'
+    div.innerHTML = COMPASS_SVG
+    // Un clic en la brújula no debe deseleccionar la aeronave.
+    L.DomEvent.disableClickPropagation(div)
+    return div
+  },
+})
+
 // Dibuja la zona y limita la vista al área de la consulta (no es un mapa global).
 function syncArea() {
   if (!map || !props.config) return
@@ -199,6 +222,7 @@ onMounted(() => {
   layers[initial.name].addTo(map)
   L.control.layers(layers, null, { position: 'topright' }).addTo(map)
   L.control.scale({ metric: true, imperial: false, maxWidth: 160 }).addTo(map)
+  new CompassControl().addTo(map)
   map.on('baselayerchange', (e) => {
     try {
       localStorage.setItem('avion.baseLayer', e.layer._avionId)
@@ -249,6 +273,34 @@ defineExpose({ focus })
   height: 40px;
   line-height: 40px;
   font-size: 26px;
+}
+.aircraft-map .compass-control {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+}
+/* Centrada bajo el zoom: 56 px de ancho (borde incluido) contra 44 px de la barra de
+   zoom, así que se corre 6 px a la izquierda del margen de 10 px de Leaflet. */
+.aircraft-map .leaflet-left .compass-control {
+  margin-left: 4px;
+}
+.compass-control svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.compass-control text {
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--bs-secondary-color);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.compass-control text.north {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #dc3545;
 }
 .aircraft-map .leaflet-control-scale-line {
   font-size: 14px;
