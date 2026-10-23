@@ -218,6 +218,13 @@ function positionAge(ac) {
             <label for="tour-switch" class="form-check-label">Recorrer</label>
           </span>
         </h6>
+        <!-- Mismos anchos que las columnas de la lista, para que queden alineados. -->
+        <div class="ac-list-head d-flex align-items-center gap-2 px-3 pb-1 border-bottom text-body-secondary" aria-hidden="true">
+          <span class="small fw-semibold flex-grow-1" title="Vuelo, matrícula o código de la aeronave">Identificación</span>
+          <span class="small fw-semibold" style="width: 3em" title="Modelo de aeronave">Tipo</span>
+          <span class="small fw-semibold text-end" style="width: 4.8em" title="Altitud en pies">Altitud</span>
+          <span class="small fw-semibold text-end" style="width: 4.6em" title="Distancia al centro de la zona, en millas náuticas">Distancia</span>
+        </div>
         <div ref="listRef" class="list-group list-group-flush overflow-auto ac-list tabular">
           <button
             v-for="ac in sorted"
@@ -273,6 +280,15 @@ function positionAge(ac) {
   font-size: 1.0625rem;
   flex-shrink: 0;
   min-height: 0;
+}
+/* Lugar reservado para la barra de desplazamiento en los dos, así los
+   encabezados no se corren cuando la lista es larga. */
+.ac-list,
+.ac-list-head {
+  scrollbar-gutter: stable;
+}
+.ac-list-head {
+  overflow: hidden;
 }
 /* Los créditos no necesitan el tamaño del resto del panel. */
 .credits {
