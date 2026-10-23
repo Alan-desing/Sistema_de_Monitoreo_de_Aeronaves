@@ -198,7 +198,7 @@ onMounted(() => {
   const initial = BASE_LAYERS[savedBaseLayer()] || BASE_LAYERS.terrain
   layers[initial.name].addTo(map)
   L.control.layers(layers, null, { position: 'topright' }).addTo(map)
-  L.control.scale({ metric: true, imperial: false }).addTo(map)
+  L.control.scale({ metric: true, imperial: false, maxWidth: 160 }).addTo(map)
   map.on('baselayerchange', (e) => {
     try {
       localStorage.setItem('avion.baseLayer', e.layer._avionId)
@@ -242,6 +242,20 @@ defineExpose({ focus })
   width: 100%;
   height: 100%;
   background: var(--bs-tertiary-bg);
+}
+/* Controles más grandes que los de Leaflet por defecto, para leerlos y tocarlos fácil. */
+.aircraft-map .leaflet-control-zoom a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 26px;
+}
+.aircraft-map .leaflet-control-scale-line {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-width: 3px;
+  line-height: 1.4;
 }
 .ac-icon {
   width: 28px;
