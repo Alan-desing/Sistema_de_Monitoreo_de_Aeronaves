@@ -48,6 +48,17 @@ export function identification(ac) {
   return [ac.flight, ac.registration, ac.type].filter(Boolean).join(' · ') || ac.hex?.toUpperCase()
 }
 
+// Enlace a Flightradar24 (igual que en el mensaje de Telegram): el vuelo en
+// vivo por indicativo; si no hay, la ficha por matrícula; si tampoco, el mapa
+// en su posición.
+export function flightradarUrl(ac) {
+  const base = 'https://www.flightradar24.com'
+  const flight = (ac.flight || '').toUpperCase()
+  if (/^[A-Z0-9]{2,8}$/.test(flight)) return `${base}/${flight}`
+  if (ac.registration) return `${base}/data/aircraft/${ac.registration.toLowerCase()}`
+  return `${base}/${ac.lat.toFixed(2)},${ac.lon.toFixed(2)}/12`
+}
+
 // -35.111944 → 35°06'43" S
 export function dms(value, isLat) {
   if (!isNumber(value)) return ''

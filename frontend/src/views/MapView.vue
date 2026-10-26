@@ -8,6 +8,7 @@ import {
   clock,
   dec1,
   distance,
+  flightradarUrl,
   heading,
   identification,
   int,
@@ -195,6 +196,15 @@ function positionAge(ac) {
             <dt class="col-4 fw-normal text-body-secondary">Posición</dt>
             <dd class="col-8 mb-0 fw-semibold">{{ positionAge(selected) }}</dd>
           </dl>
+          <!-- Sin referer: Flightradar24 responde 451 a los enlaces que vienen de otro sitio. -->
+          <a
+            :href="flightradarUrl(selected)"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-sm btn-outline-primary mt-2"
+          >
+            <i class="bi bi-box-arrow-up-right me-1"></i>Ver en Flightradar24
+          </a>
         </div>
         <p v-else-if="live.selectedHex" class="small text-body-secondary mb-0">
           <i class="bi bi-eye-slash me-1"></i>La aeronave seleccionada ya no se recibe.

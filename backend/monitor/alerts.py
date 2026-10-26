@@ -1,5 +1,6 @@
 """Contenido de una alerta de ingreso a la zona (Telegram y web)."""
 
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -28,6 +29,21 @@ def build_alert(aircraft, zone):
         "zone": zone.name,
         "time": aircraft.timestamp,
     }
+
+
+FR24_URL = "https://www.flightradar24.com"
+_CALLSIGN = re.compile(r"^[A-Z0-9]{2,8}$")
+
+
+def flightradar_url(alert):
+    """Enlace a Flightradar24: el vuelo en vivo por indicativo; si no hay, la
+    ficha de la aeronave por matrícula; si tampoco, el mapa en su posición."""
+    flight = (alert.get("flight") or "").upper()
+    if _CALLSIGN.match(flight):
+        return f"{FR24_URL}/{flight}"
+    if alert.get("registration"):
+        return f"{FR24_URL}/data/aircraft/{alert['registration'].lower()}"
+    return f"{FR24_URL}/{alert['lat']:.2f},{alert['lon']:.2f}/12"
 
 
 def _integer(value):
@@ -59,5 +75,6 @@ def format_alert_message(alert):
             f"Rumbo: {track}",
             f"Distancia al centro: {_decimal(alert['dst'])} NM",
             f"Hora: {when}",
+            f"Flightradar24: {flightradar_url(alert)}",
         ]
     )

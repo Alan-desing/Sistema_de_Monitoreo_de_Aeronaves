@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import httpx
 from django.test import SimpleTestCase, override_settings
 
-from monitor.alerts import build_alert, format_alert_message
+from monitor.alerts import build_alert, flightradar_url, format_alert_message
 from monitor.telegram import MAX_ATTEMPTS, TelegramError, TelegramNotifier, send_message
 
 from .helpers import CNA, NOW, make_aircraft
@@ -33,6 +33,16 @@ class MessageTests(SimpleTestCase):
         self.assertIn("Rumbo: 007°", text)
         self.assertIn("Distancia al centro: 3,2 NM", text)
         self.assertRegex(text, r"Hora: \d\d:\d\d:\d\d")
+        self.assertIn("Flightradar24: https://www.flightradar24.com/ARG1309", text)
+
+    def test_flightradar_url_falls_back_to_registration_then_position(self):
+        by_reg = build_alert(make_aircraft(flight=None), CNA)
+        self.assertEqual(flightradar_url(by_reg), "https://www.flightradar24.com/data/aircraft/lv-knp")
+        # Indicativo inválido (adsb.fi a veces manda basura): no sirve para buscar el vuelo.
+        garbage = build_alert(make_aircraft(flight="@@@@@@@@"), CNA)
+        self.assertEqual(flightradar_url(garbage), "https://www.flightradar24.com/data/aircraft/lv-knp")
+        by_pos = build_alert(make_aircraft(flight=None, registration=None), CNA)
+        self.assertRegex(flightradar_url(by_pos), r"^https://www\.flightradar24\.com/-?\d+\.\d\d,-?\d+\.\d\d/12$")
 
     def test_missing_optional_data(self):
         alert = build_alert(make_aircraft(flight=None, registration=None, type=None, gs=None, track=None), CNA)
