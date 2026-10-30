@@ -40,4 +40,14 @@ body,
   .menu-status {
     border-top: 1px solid rgba(255, 255, 255, 0.15);
   }
+  /* Usuario a la izquierda, campana y Salir a la derecha; avisos de estado debajo. */
+  .menu-user {
+    order: -1;
+    margin-right: auto;
+  }
+  .menu-status > .badge,
+  .menu-status > .small {
+    order: 1;
+    width: 100%;
+  }
 }

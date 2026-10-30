@@ -97,7 +97,7 @@ async function onLogout() {
           >
             <i class="bi" :class="live.sound ? 'bi-bell-fill' : 'bi-bell-slash-fill'"></i>
           </button>
-          <span class="text-light d-flex align-items-center gap-2">
+          <span class="text-light d-flex align-items-center gap-2 menu-user">
             <i class="bi bi-person-circle fs-5"></i>
             <span class="lh-sm">
               {{ displayName(session.user) }}<br />
