@@ -119,7 +119,7 @@ onMounted(load)
 
 <template>
   <div class="page">
-    <div class="d-flex align-items-end justify-content-between gap-3 mb-4">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
       <div>
         <h1 class="h3 mb-1"><i class="bi bi-people me-2"></i>Usuarios</h1>
         <p class="text-body-secondary mb-0">Los usuarios no se borran: se desactivan y dejan de poder ingresar.</p>
@@ -145,10 +145,10 @@ onMounted(load)
           <thead class="table-light">
             <tr>
               <th>Usuario</th>
-              <th>Nombre</th>
+              <th class="d-none d-sm-table-cell">Nombre</th>
               <th>Rol</th>
-              <th>Estado</th>
-              <th>Último ingreso</th>
+              <th class="d-none d-sm-table-cell">Estado</th>
+              <th class="d-none d-md-table-cell">Último ingreso</th>
               <th class="text-end">Acciones</th>
             </tr>
           </thead>
@@ -158,30 +158,41 @@ onMounted(load)
                 <i class="bi me-1" :class="u.is_active ? 'bi-person' : 'bi-person-slash'"></i>
                 <strong>{{ u.username }}</strong>
                 <span v-if="u.id === session.user?.id" class="badge text-bg-light border ms-1">vos</span>
+                <!-- En pantallas chicas el estado va debajo del usuario, sin columna propia. -->
+                <div class="d-sm-none mt-1">
+                  <span class="badge" :class="u.is_active ? 'text-bg-success' : 'text-bg-secondary'">
+                    {{ u.is_active ? 'Activo' : 'Desactivado' }}
+                  </span>
+                </div>
               </td>
-              <td>{{ [u.first_name, u.last_name].filter(Boolean).join(' ') || '—' }}</td>
+              <td class="d-none d-sm-table-cell">{{ [u.first_name, u.last_name].filter(Boolean).join(' ') || '—' }}</td>
               <td>
-                <span v-if="u.role === 'admin'"><i class="bi bi-shield-lock me-1 text-primary"></i>Administrador</span>
-                <span v-else><i class="bi bi-eye me-1"></i>Usuario registrado</span>
+                <span v-if="u.role === 'admin'" class="text-nowrap">
+                  <i class="bi bi-shield-lock me-1 text-primary"></i><span class="d-none d-sm-inline">Administrador</span><span class="d-sm-none">Admin.</span>
+                </span>
+                <span v-else class="text-nowrap">
+                  <i class="bi bi-eye me-1"></i><span class="d-none d-sm-inline">Usuario registrado</span><span class="d-sm-none">Usuario</span>
+                </span>
               </td>
-              <td>
+              <td class="d-none d-sm-table-cell">
                 <span class="badge" :class="u.is_active ? 'text-bg-success' : 'text-bg-secondary'">
                   {{ u.is_active ? 'Activo' : 'Desactivado' }}
                 </span>
               </td>
-              <td class="small">{{ lastLogin(u) }}</td>
+              <td class="small d-none d-md-table-cell">{{ lastLogin(u) }}</td>
               <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-secondary" title="Editar" @click="openForm(u)">
-                  <i class="bi bi-pencil"></i> Editar
+                  <i class="bi bi-pencil"></i><span class="d-none d-sm-inline"> Editar</span>
                 </button>
                 <button
                   v-if="u.id !== session.user?.id"
                   class="btn btn-sm ms-1"
+                  :title="u.is_active ? 'Desactivar' : 'Activar'"
                   :class="u.is_active ? 'btn-outline-danger' : 'btn-outline-success'"
                   @click="toggleActive(u)"
                 >
                   <i class="bi" :class="u.is_active ? 'bi-person-dash' : 'bi-person-check'"></i>
-                  {{ u.is_active ? 'Desactivar' : 'Activar' }}
+                  <span class="d-none d-sm-inline">{{ u.is_active ? 'Desactivar' : 'Activar' }}</span>
                 </button>
               </td>
             </tr>
@@ -193,7 +204,7 @@ onMounted(load)
     <!-- Formulario de alta / edición -->
     <template v-if="editing">
       <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" @click.self="close">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
           <form class="modal-content" novalidate @submit.prevent="save">
             <div class="modal-header">
               <h5 class="modal-title">

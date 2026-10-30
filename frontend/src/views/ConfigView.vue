@@ -219,7 +219,7 @@ onMounted(load)
 
       <!-- Zona -->
       <section class="card shadow-sm mb-3" data-section="zone">
-        <div class="card-header bg-body d-flex align-items-center justify-content-between gap-3 py-3">
+        <div class="card-header bg-body d-flex flex-wrap align-items-center justify-content-between gap-3 py-3">
           <div>
             <h2 class="h5 mb-0"><i class="bi bi-bullseye text-danger me-2"></i>Zona de alerta</h2>
             <div class="small text-body-secondary">Cilindro vertical: se avisa cuando una aeronave entra.</div>
@@ -273,7 +273,7 @@ onMounted(load)
 
       <!-- Telegram -->
       <section class="card shadow-sm mb-3" data-section="telegram">
-        <div class="card-header bg-body d-flex align-items-center justify-content-between gap-3 py-3">
+        <div class="card-header bg-body d-flex flex-wrap align-items-center justify-content-between gap-3 py-3">
           <div>
             <h2 class="h5 mb-0"><i class="bi bi-telegram text-primary me-2"></i>Telegram</h2>
             <div class="small text-body-secondary">
@@ -318,7 +318,7 @@ onMounted(load)
         </div>
       </section>
 
-      <div class="save-bar card shadow d-flex flex-row align-items-center gap-2 px-3 py-2">
+      <div class="save-bar card shadow d-flex flex-row flex-wrap align-items-center gap-2 px-3 py-2">
         <span class="me-auto small" :class="dirty ? 'text-warning-emphasis fw-semibold' : 'text-body-secondary'">
           <i class="bi me-1" :class="dirty ? 'bi-pencil-fill' : 'bi-check2'"></i>
           {{ dirty ? 'Hay cambios sin guardar.' : 'Sin cambios.' }}
@@ -341,5 +341,14 @@ onMounted(load)
   position: sticky;
   bottom: 0.75rem;
   z-index: 10;
+}
+/* Pantallas chicas: el estado en una línea y los dos botones repartidos debajo. */
+@media (max-width: 575.98px) {
+  .save-bar > span {
+    flex-basis: 100%;
+  }
+  .save-bar .btn {
+    flex: 1;
+  }
 }
 </style>

@@ -67,8 +67,26 @@ function open(alert) {
   z-index: 2000;
 }
 /* En el mapa: a la izquierda del panel lateral y del selector de capas. */
-.alert-toasts.beside-sidebar {
-  right: 400px;
+@media (min-width: 992px) {
+  .alert-toasts.beside-sidebar {
+    right: 400px;
+  }
+}
+/* Tablet: el panel va debajo del mapa; solo se deja libre el selector de capas. */
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .alert-toasts.beside-sidebar {
+    right: 56px;
+  }
+}
+/* Pantallas chicas: los avisos ocupan el ancho disponible, debajo de la barra. */
+@media (max-width: 575.98px) {
+  .alert-toasts {
+    left: 0;
+    padding: 0.5rem !important;
+  }
+  .alert-toasts .toast {
+    width: 100%;
+  }
 }
 .toast {
   --bs-toast-bg: var(--bs-body-bg); /* opaco: sobre el mapa el semitransparente no se lee */

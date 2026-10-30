@@ -27,3 +27,17 @@ body,
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Pantallas chicas: menos margen alrededor del contenido. */
+@media (max-width: 575.98px) {
+  .page {
+    padding: 1rem;
+  }
+}
+
+/* Menú desplegado (pantallas chicas): separa el estado y la sesión de los enlaces. */
+@media (max-width: 991.98px) {
+  .menu-status {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}

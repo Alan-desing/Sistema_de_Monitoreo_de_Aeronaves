@@ -76,7 +76,21 @@ function tourStep() {
   }
   tourSeen.add(next.hex)
   selectAndFocus(next.hex)
-  nextTick(() => listRef.value?.querySelector('.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
+  nextTick(scrollListToActive)
+}
+
+// Solo desplaza la lista: en pantallas chicas la página entera se desplaza y
+// scrollIntoView movería también la página, sacando el mapa de la vista.
+function scrollListToActive() {
+  const list = listRef.value
+  const item = list?.querySelector('.active')
+  if (!item) return
+  const top = item.offsetTop
+  const bottom = top + item.offsetHeight
+  if (top < list.scrollTop) list.scrollTo({ top, behavior: 'smooth' })
+  else if (bottom > list.scrollTop + list.clientHeight) {
+    list.scrollTo({ top: bottom - list.clientHeight, behavior: 'smooth' })
+  }
 }
 
 function startTourTimer() {
@@ -130,8 +144,8 @@ function positionAge(ac) {
 </script>
 
 <template>
-  <div class="d-flex h-100">
-    <div class="flex-grow-1 position-relative" style="min-width: 0">
+  <div class="map-layout d-flex">
+    <div class="map-pane flex-grow-1 position-relative">
       <AircraftMap
         ref="mapRef"
         :aircraft="live.aircraft"
@@ -148,7 +162,7 @@ function positionAge(ac) {
       </div>
     </div>
 
-    <aside class="sidebar d-flex flex-column bg-body border-start">
+    <aside class="sidebar d-flex flex-column bg-body">
       <!-- Referencia: el mismo dibujo que en el mapa y qué significa. -->
       <section v-if="zone" class="p-3 border-bottom map-legend">
         <div class="d-flex align-items-center gap-2 mb-2">
@@ -235,7 +249,7 @@ function positionAge(ac) {
           <span class="small fw-semibold text-end" style="width: 4.8em" title="Altitud en pies">Altitud</span>
           <span class="small fw-semibold text-end" style="width: 4.6em" title="Distancia al centro de la zona, en millas náuticas">Distancia</span>
         </div>
-        <div ref="listRef" class="list-group list-group-flush overflow-auto ac-list tabular">
+        <div ref="listRef" class="list-group list-group-flush overflow-auto position-relative ac-list tabular">
           <button
             v-for="ac in sorted"
             :key="ac.hex"
@@ -285,11 +299,41 @@ function positionAge(ac) {
 </template>
 
 <style scoped>
+.map-layout {
+  height: 100%;
+}
+.map-pane {
+  min-width: 0;
+}
 .sidebar {
   width: 400px;
   font-size: 1.0625rem;
   flex-shrink: 0;
   min-height: 0;
+  border-left: var(--bs-border-width) solid var(--bs-border-color);
+}
+/* Pantallas chicas: el mapa arriba y el panel debajo, a todo el ancho. Se
+   desplaza la página; la lista conserva su propio desplazamiento. */
+@media (max-width: 991.98px) {
+  .map-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .map-pane {
+    flex: none;
+    height: 60vh;
+    height: 60svh;
+    min-height: 320px;
+  }
+  .sidebar {
+    width: 100%;
+    font-size: 1rem;
+    border-left: none;
+    border-top: var(--bs-border-width) solid var(--bs-border-color);
+  }
+  .ac-list {
+    max-height: 50vh;
+  }
 }
 /* Lugar reservado para la barra de desplazamiento en los dos, así los
    encabezados no se corren cuando la lista es larga. */

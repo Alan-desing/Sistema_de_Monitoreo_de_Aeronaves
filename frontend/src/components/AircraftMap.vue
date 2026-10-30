@@ -309,6 +309,17 @@ defineExpose({ focus })
   border-width: 3px;
   line-height: 1.4;
 }
+/* Pantallas chicas: la atribución ocupa todo el ancho, así que va más chica y
+   la escala se sube para que no queden encimadas. */
+@media (max-width: 575.98px) {
+  .aircraft-map .leaflet-control-attribution {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .aircraft-map .leaflet-bottom.leaflet-left {
+    bottom: 28px;
+  }
+}
 .ac-icon {
   width: 28px;
   height: 28px;
