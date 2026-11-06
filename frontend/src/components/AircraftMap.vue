@@ -58,9 +58,17 @@ function headingOf(ac) {
   return typeof ac.track === 'number' ? ac.track : typeof ac.true_heading === 'number' ? ac.true_heading : null
 }
 
+// Avioneta (ala alta recta, cola chica) para las categorías ADS-B livianas.
+const smallPlaneSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M7.3 1.2h1.4L8.7 5l6.8.3v1.7l-6.8.3-.1 4.7 2.9.3v1.5l-3 .2-.5 1-.5-1-3-.2v-1.5l2.9-.3-.1-4.7-6.8-.3V5.3L7.3 5z"/></svg>`
+
+// A1 (< 7 t) y A2 (7–34 t): aviones chicos. Sin categoría se asume avión grande.
+function isSmall(ac) {
+  return ac.category === 'A1' || ac.category === 'A2'
+}
+
 function iconKey(ac) {
   const h = headingOf(ac)
-  return [h === null ? 'x' : Math.round(h), ac.inside, ac.alt_baro === 'ground', ac.hex === props.selectedHex].join('|')
+  return [h === null ? 'x' : Math.round(h), isSmall(ac), ac.inside, ac.alt_baro === 'ground', ac.hex === props.selectedHex].join('|')
 }
 
 function makeIcon(ac) {
@@ -71,7 +79,8 @@ function makeIcon(ac) {
   if (ac.hex === props.selectedHex) classes.push('selected')
   // bi-airplane-fill apunta al norte: se rota según el rumbo. Sin rumbo, un punto.
   if (h === null) classes.push('no-heading')
-  const shape = h === null ? dotSvg : planeSvg.replace('<svg', `<svg style="transform: rotate(${h}deg)"`)
+  if (isSmall(ac)) classes.push('small')
+  const shape = h === null ? dotSvg : (isSmall(ac) ? smallPlaneSvg : planeSvg).replace('<svg', `<svg style="transform: rotate(${h}deg)"`)
   return L.divIcon({ className: '', html: `<div class="${classes.join(' ')}">${shape}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] })
 }
 
@@ -451,6 +460,10 @@ defineExpose({ focus })
   width: 12px;
   height: 12px;
   stroke-width: 1.5px;
+}
+.ac-icon.small svg {
+  width: 20px;
+  height: 20px;
 }
 .ac-icon.ground svg {
   color: var(--bs-secondary);

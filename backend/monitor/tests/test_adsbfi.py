@@ -70,7 +70,12 @@ class ParseAircraftTests(SimpleTestCase):
         self.assertIsNone(ac.gs)
         self.assertIsNone(ac.track)
         self.assertIsNone(ac.alt_baro)
+        self.assertIsNone(ac.category)
         self.assertEqual(ac.label, "e8061d")
+
+    def test_category(self):
+        ac, _ = parse_aircraft(raw(category="A1"), NOW_S)
+        self.assertEqual(ac.category, "A1")
 
     def test_label_falls_back_to_registration(self):
         ac, _ = parse_aircraft(raw(flight="        "), NOW_S)

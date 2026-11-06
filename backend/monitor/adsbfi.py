@@ -65,6 +65,8 @@ class Aircraft:
     dst: float  # NM al centro de la zona
     seen_pos: float  # segundos
     timestamp: float  # hora de la posición, en segundos Unix (now - seen_pos)
+    # Categoría ADS-B del emisor: A1 liviana, A2 chica, A3+ mediana/grande, A7 helicóptero.
+    category: str | None = None
 
     @property
     def label(self):
@@ -156,6 +158,7 @@ def parse_aircraft(raw, now):
             dst=values["dst"],
             seen_pos=values["seen_pos"],
             timestamp=now - values["seen_pos"],
+            category=_text(raw.get("category")),
         ),
         (),
     )
