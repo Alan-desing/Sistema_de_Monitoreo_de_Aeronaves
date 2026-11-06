@@ -119,8 +119,10 @@ function syncMarkers() {
 // Rosa de los vientos: gira con el mapa. Arrastrarla con el mouse (o el dedo)
 // rota el mapa; un clic sin arrastrar vuelve el norte arriba.
 const COMPASS_SVG = `<svg viewBox="-26 -26 52 52" aria-hidden="true">
-  <polygon points="0,-11 3.5,0 -3.5,0" fill="#dc3545" />
-  <polygon points="0,11 3.5,0 -3.5,0" fill="#adb5bd" />
+  <g class="needle">
+    <polygon points="0,-11 3.5,0 -3.5,0" fill="#dc3545" />
+    <polygon points="0,11 3.5,0 -3.5,0" fill="#adb5bd" />
+  </g>
   <circle r="1.8" fill="#212529" />
   <text y="-17" class="north">N</text>
   <text x="17">E</text>
@@ -134,8 +136,9 @@ const CompassControl = L.Control.extend({
     const div = L.DomUtil.create('div', 'leaflet-bar compass-control')
     div.title = 'Arrastrar para rotar el mapa · clic: norte arriba'
     div.innerHTML = COMPASS_SVG
-    const svg = div.firstChild
-    const sync = () => (svg.style.transform = `rotate(${map.getBearing()}deg)`)
+    // Las letras quedan fijas; solo la aguja gira y marca dónde está el norte real.
+    const needle = div.querySelector('.needle')
+    const sync = () => needle.setAttribute('transform', `rotate(${map.getBearing()})`)
     map.on('rotate', sync)
     sync()
 
@@ -148,12 +151,14 @@ const CompassControl = L.Control.extend({
     div.addEventListener('pointerdown', (e) => {
       e.preventDefault()
       div.setPointerCapture(e.pointerId)
-      drag = { start: angleAt(e), bearing: map.getBearing(), moved: false }
+      drag = { start: angleAt(e), bearing: map.getBearing(), x: e.clientX, y: e.clientY, moved: false }
     })
     div.addEventListener('pointermove', (e) => {
       if (!drag) return
+      // Umbral en píxeles, no en grados: cerca del centro un temblor mínimo del
+      // mouse son muchos grados y el clic dejaba de contar como "norte arriba".
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return
       const delta = angleAt(e) - drag.start
-      if (!drag.moved && Math.abs(delta) < 3) return
       drag.moved = true
       setGyro(map, false)
       map.setBearing(drag.bearing + delta)
