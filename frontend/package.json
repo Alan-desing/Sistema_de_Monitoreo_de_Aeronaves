@@ -12,6 +12,7 @@
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.2",
     "leaflet": "^1.9.4",
+    "leaflet-rotate": "^0.2.8",
     "vue": "^3.5.0",
     "vue-router": "^4.5.0"
   },

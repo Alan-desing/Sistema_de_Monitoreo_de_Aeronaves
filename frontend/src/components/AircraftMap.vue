@@ -1,5 +1,7 @@
 <script setup>
 import L from 'leaflet'
+// Agrega rotación a Leaflet (setBearing, giroscopio) vía L.Map.include.
+import 'leaflet-rotate'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 // Íconos de Bootstrap Icons como SVG (se pueden rotar y llevar contorno).
 import planeSvg from 'bootstrap-icons/icons/airplane-fill.svg?raw'
@@ -87,7 +89,8 @@ function syncMarkers() {
     const label = labelOf(ac)
     let entry = markers.get(ac.hex)
     if (!entry) {
-      const marker = L.marker(pos, { icon: makeIcon(ac), riseOnHover: true, keyboard: false })
+      // rotateWithView: el avión gira junto con el mapa y sigue apuntando a su rumbo.
+      const marker = L.marker(pos, { icon: makeIcon(ac), riseOnHover: true, keyboard: false, rotateWithView: true })
         .bindTooltip(label, { permanent: true, direction: 'right', offset: [12, 0], className: 'ac-label' })
         .on('click', () => emit('select', ac.hex))
         .addTo(map)
@@ -113,7 +116,8 @@ function syncMarkers() {
   }
 }
 
-// Brújula fija: el mapa no rota, así que el norte siempre queda arriba.
+// Rosa de los vientos: gira con el mapa. Arrastrarla con el mouse (o el dedo)
+// rota el mapa; un clic sin arrastrar vuelve el norte arriba.
 const COMPASS_SVG = `<svg viewBox="-26 -26 52 52" aria-hidden="true">
   <polygon points="0,-11 3.5,0 -3.5,0" fill="#dc3545" />
   <polygon points="0,11 3.5,0 -3.5,0" fill="#adb5bd" />
@@ -126,15 +130,95 @@ const COMPASS_SVG = `<svg viewBox="-26 -26 52 52" aria-hidden="true">
 
 const CompassControl = L.Control.extend({
   options: { position: 'topleft' },
-  onAdd() {
+  onAdd(map) {
     const div = L.DomUtil.create('div', 'leaflet-bar compass-control')
-    div.title = 'Norte arriba'
+    div.title = 'Arrastrar para rotar el mapa · clic: norte arriba'
     div.innerHTML = COMPASS_SVG
-    // Un clic en la brújula no debe deseleccionar la aeronave.
+    const svg = div.firstChild
+    const sync = () => (svg.style.transform = `rotate(${map.getBearing()}deg)`)
+    map.on('rotate', sync)
+    sync()
+
+    // Ángulo del puntero alrededor del centro de la rosa, en grados horarios desde arriba.
+    const angleAt = (e) => {
+      const r = div.getBoundingClientRect()
+      return (Math.atan2(e.clientX - (r.left + r.width / 2), r.top + r.height / 2 - e.clientY) * 180) / Math.PI
+    }
+    let drag = null
+    div.addEventListener('pointerdown', (e) => {
+      e.preventDefault()
+      div.setPointerCapture(e.pointerId)
+      drag = { start: angleAt(e), bearing: map.getBearing(), moved: false }
+    })
+    div.addEventListener('pointermove', (e) => {
+      if (!drag) return
+      const delta = angleAt(e) - drag.start
+      if (!drag.moved && Math.abs(delta) < 3) return
+      drag.moved = true
+      setGyro(map, false)
+      map.setBearing(drag.bearing + delta)
+    })
+    const end = () => {
+      if (drag && !drag.moved) {
+        setGyro(map, false)
+        map.setBearing(0)
+      }
+      drag = null
+    }
+    div.addEventListener('pointerup', end)
+    div.addEventListener('pointercancel', () => (drag = null))
+    // Un clic en la brújula no debe deseleccionar la aeronave ni arrastrar el mapa.
     L.DomEvent.disableClickPropagation(div)
     return div
   },
 })
+
+// Opción para celulares: el mapa sigue la orientación del dispositivo.
+const gyroOn = ref(false)
+
+async function setGyro(m, on) {
+  if (on && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // iOS pide permiso explícito, y solo dentro de un gesto del usuario.
+    try {
+      if ((await DeviceOrientationEvent.requestPermission()) !== 'granted') on = false
+    } catch {
+      on = false
+    }
+  }
+  if (on) m.compassBearing.enable()
+  else m.compassBearing.disable()
+  // El handler se desactiva solo si el navegador no da orientación.
+  gyroOn.value = m.compassBearing.enabled()
+  m.fire('gyrochange')
+}
+
+const GyroControl = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd(map) {
+    const div = L.DomUtil.create('div', 'leaflet-bar gyro-control')
+    const btn = L.DomUtil.create('a', '', div)
+    btn.href = '#'
+    btn.role = 'button'
+    btn.innerHTML = '<i class="bi bi-phone-vibrate" aria-hidden="true"></i>'
+    const sync = () => {
+      btn.classList.toggle('active', gyroOn.value)
+      btn.title = gyroOn.value ? 'Rotación por giroscopio: activada' : 'Rotar el mapa con el giroscopio'
+      btn.setAttribute('aria-label', btn.title)
+      btn.setAttribute('aria-pressed', gyroOn.value)
+    }
+    map.on('gyrochange', sync)
+    sync()
+    L.DomEvent.disableClickPropagation(div)
+    L.DomEvent.on(btn, 'click', (e) => {
+      L.DomEvent.preventDefault(e)
+      setGyro(map, !gyroOn.value)
+    })
+    return div
+  },
+})
+
+// Solo en dispositivos táctiles con sensor de orientación (celulares, tablets).
+const hasGyro = 'DeviceOrientationEvent' in window && window.matchMedia('(pointer: coarse)').matches
 
 // Dibuja la zona y limita la vista al área de la consulta (no es un mapa global).
 function syncArea() {
@@ -207,6 +291,10 @@ onMounted(() => {
     zoomControl: true,
     worldCopyJump: false,
     maxBoundsViscosity: 1.0,
+    rotate: true,
+    rotateControl: false, // se usa la rosa de los vientos propia
+    touchRotate: true, // giro con dos dedos
+    compassBearing: false, // giroscopio apagado hasta que el usuario lo active
   })
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>')
   map.attributionControl.addAttribution(
@@ -223,6 +311,7 @@ onMounted(() => {
   L.control.layers(layers, null, { position: 'topright' }).addTo(map)
   L.control.scale({ metric: true, imperial: false, maxWidth: 160 }).addTo(map)
   new CompassControl().addTo(map)
+  if (hasGyro) new GyroControl().addTo(map)
   map.on('baselayerchange', (e) => {
     try {
       localStorage.setItem('avion.baseLayer', e.layer._avionId)
@@ -239,6 +328,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  map?.compassBearing?.disable()
+  gyroOn.value = false
   map?.remove()
   map = null
   markers.clear()
@@ -285,10 +376,24 @@ defineExpose({ focus })
 .aircraft-map .leaflet-left .compass-control {
   margin-left: 4px;
 }
+.aircraft-map .compass-control {
+  cursor: grab;
+  touch-action: none;
+}
 .compass-control svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+.aircraft-map .gyro-control a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 22px;
+}
+.aircraft-map .gyro-control a.active {
+  background: var(--bs-primary);
+  color: #fff;
 }
 .compass-control text {
   font-size: 9px;
