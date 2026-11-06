@@ -70,14 +70,32 @@ async def _call(client, token, method, *, timeout=REQUEST_TIMEOUT_S, **request):
 
 
 async def send_message(client, token, chat_id, text):
-    return await _call(client, token, "sendMessage",
-                       json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True})
+    return await _call(
+        client,
+        token,
+        "sendMessage",
+        json={
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        },
+    )
 
 
 async def send_photo(client, token, chat_id, photo, caption):
-    return await _call(client, token, "sendPhoto", timeout=PHOTO_TIMEOUT_S,
-                       data={"chat_id": chat_id, "caption": caption},
-                       files={"photo": ("mapa.jpg", photo, "image/jpeg")})
+    return await _call(
+        client,
+        token,
+        "sendPhoto",
+        timeout=PHOTO_TIMEOUT_S,
+        data={
+            "chat_id": chat_id,
+            "caption": caption,
+            "parse_mode": "HTML",
+        },
+        files={"photo": ("mapa.jpg", photo, "image/jpeg")},
+    )
 
 
 async def send_alert(client, token, chat_id, text, photo=None):
@@ -129,7 +147,10 @@ async def send_test_message(config):
     if not config.telegram_enabled:
         raise TelegramError("Telegram no está configurado (falta el token del bot o el chat id del grupo).")
     alert = demo_alert(config)
-    text = "🧪 MENSAJE DE PRUEBA — no es una alerta real\n\n" + format_alert_message(alert)
+    text = (
+        "🧪 <b>MENSAJE DE PRUEBA</b> — no es una alerta real\n\n"
+        + format_alert_message(alert)
+    )
     async with tiles_client() as tiles:
         photo = await build_map(lambda a, z: render_alert_map(a, z, client=tiles), alert, Zone.from_config(config))
     async with httpx.AsyncClient() as client:

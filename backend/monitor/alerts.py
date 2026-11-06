@@ -2,6 +2,7 @@
 
 import re
 from datetime import datetime
+from html import escape
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -22,7 +23,7 @@ def build_alert(aircraft, zone):
         "alt_m": feet_to_meters(alt_ft) if alt_ft is not None else None,
         "gs": aircraft.gs,
         "track": aircraft.track,
-        "true_heading": aircraft.true_heading,  # solo para orientar el avión en el mapa
+        "true_heading": aircraft.true_heading,
         "dst": aircraft.dst,
         "lat": aircraft.lat,
         "lon": aircraft.lon,
@@ -36,8 +37,7 @@ _CALLSIGN = re.compile(r"^[A-Z0-9]{2,8}$")
 
 
 def flightradar_url(alert):
-    """Enlace a Flightradar24: el vuelo en vivo por indicativo; si no hay, la
-    ficha de la aeronave por matrícula; si tampoco, el mapa en su posición."""
+    """Enlace a Flightradar24: vuelo, ficha de aeronave o mapa en su posición."""
     flight = (alert.get("flight") or "").upper()
     if _CALLSIGN.match(flight):
         return f"{FR24_URL}/{flight}"
@@ -55,26 +55,47 @@ def _decimal(value, digits=1):
 
 
 def format_alert_message(alert):
-    """Texto plano (sin Markdown/HTML, para no tener que escapar nada)."""
+    """Genera el mensaje HTML de una alerta para Telegram."""
     ident = " · ".join(
-        part for part in (alert["flight"], alert["registration"], alert["type"]) if part
-    ) or alert["hex"].upper()
+        str(part) for part in (alert["flight"], alert["registration"], alert["type"]) if part
+    ) or str(alert["hex"]).upper()
+
     if alert["alt_ft"] is not None:
         altitude = f"{_integer(alert['alt_ft'])} ft ({_integer(alert['alt_m'])} m)"
     else:
         altitude = "sin dato"
+
     speed = f"{_integer(alert['gs'])} kt" if alert["gs"] is not None else "sin dato"
     track = f"{alert['track']:03.0f}°" if alert["track"] is not None else "sin dato"
-    when = datetime.fromtimestamp(alert["time"], ZoneInfo(settings.TIME_ZONE)).strftime("%H:%M:%S")
-    return "\n".join(
-        [
-            f"✈️ Ingreso a {alert['zone']}",
-            ident,
-            f"Altitud: {altitude}",
-            f"Velocidad: {speed}",
-            f"Rumbo: {track}",
-            f"Distancia al centro: {_decimal(alert['dst'])} NM",
-            f"Hora: {when}",
-            f"Flightradar24: {flightradar_url(alert)}",
-        ]
-    )
+    distance = f"{_decimal(alert['dst'])} NM" if alert["dst"] is not None else "sin dato"
+    when = datetime.fromtimestamp(
+        alert["time"], ZoneInfo(settings.TIME_ZONE)
+    ).strftime("%H:%M:%S")
+
+    zone = escape(str(alert["zone"]))
+    ident = escape(ident)
+    url = escape(flightradar_url(alert), quote=True)
+
+    return "\n".join([
+        "<b>✈️ INGRESO A ZONA DE ALERTA</b>",
+        "",
+        f"<b>Zona:</b> {zone}",
+        "",
+        f"<b>{ident}</b>",
+        "",
+        "━━━━━━━━━━━━━━━━",
+        "",
+        f"<b>ALTITUD</b> · {altitude}",
+        "",
+        f"<b>VELOCIDAD</b> · {speed}",
+        "",
+        f"<b>RUMBO</b> · {track}",
+        "",
+        f"<b>DISTANCIA AL CENTRO</b> · {distance}",
+        "",
+        "━━━━━━━━━━━━━━━━",
+        "",
+        f"<b>Hora:</b> {when}",
+        "",
+        f'🔗 <a href="{url}">Ver aeronave en Flightradar24</a>',
+    ])
