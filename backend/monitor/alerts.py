@@ -9,6 +9,18 @@ from django.conf import settings
 
 from .zone import feet_to_meters
 
+ARGENTINA_TZ = "America/Argentina/Buenos_Aires"
+
+
+def alert_clock(epoch):
+    """Hora de la zona; si la zona no está en Argentina, también la hora argentina."""
+    def hhmmss(tz):
+        return datetime.fromtimestamp(epoch, ZoneInfo(tz)).strftime("%H:%M:%S")
+
+    if settings.TIME_ZONE == ARGENTINA_TZ:
+        return hhmmss(ARGENTINA_TZ)
+    return f"{hhmmss(settings.TIME_ZONE)} (hora local) · {hhmmss(ARGENTINA_TZ)} en Argentina"
+
 
 def build_alert(aircraft, zone):
     """Datos de la alerta. Se envían tal cual al navegador."""
@@ -68,9 +80,7 @@ def format_alert_message(alert):
     speed = f"{_integer(alert['gs'])} kt" if alert["gs"] is not None else "sin dato"
     track = f"{alert['track']:03.0f}°" if alert["track"] is not None else "sin dato"
     distance = f"{_decimal(alert['dst'])} NM" if alert["dst"] is not None else "sin dato"
-    when = datetime.fromtimestamp(
-        alert["time"], ZoneInfo(settings.TIME_ZONE)
-    ).strftime("%H:%M:%S")
+    when = alert_clock(alert["time"])
 
     zone = escape(str(alert["zone"]))
     ident = escape(ident)

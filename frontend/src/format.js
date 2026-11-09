@@ -39,9 +39,16 @@ export function distance(nm) {
   return isNumber(nm) ? `${dec1(nm)} NM (${dec1(nm * 1.852)} km)` : 'sin dato'
 }
 
-export function clock(epochSeconds) {
+const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires'
+
+// Con `zoneTz` de otro país, muestra la hora de allá y la de Argentina.
+export function clock(epochSeconds, zoneTz) {
   if (!isNumber(epochSeconds)) return '—'
-  return new Date(epochSeconds * 1000).toLocaleTimeString('es-AR')
+  const date = new Date(epochSeconds * 1000)
+  // h23 explícito: con ICU reciente es-AR sale en 12 h sin a. m./p. m. (ambiguo).
+  const at = (timeZone) => date.toLocaleTimeString('es-AR', { timeZone, hourCycle: 'h23' })
+  if (!zoneTz || zoneTz === ARGENTINA_TZ) return at(undefined)
+  return `${at(zoneTz)} · ARG ${at(ARGENTINA_TZ)}`
 }
 
 export function identification(ac) {

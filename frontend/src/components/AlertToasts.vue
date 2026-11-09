@@ -33,7 +33,7 @@ function open(alert) {
         <div class="toast-header text-bg-danger">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>
           <strong class="me-auto">Ingreso a {{ a.zone }}</strong>
-          <small class="text-white-50">{{ clock(a.time) }}</small>
+          <small class="text-white-50">{{ clock(a.time, live.config?.time_zone) }}</small>
           <button
             type="button"
             class="btn-close btn-close-white ms-2"

@@ -9,6 +9,7 @@ Todos los mensajes son JSON con un campo ``type``:
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.conf import settings
 
 GROUP = "aircraft"
 
@@ -31,6 +32,8 @@ def public_config(config):
         "poll_interval_s": config.poll_interval_s,
         "query_radius_nm": config.query_radius_nm,
         "telegram_enabled": config.telegram_enabled,
+        # Zona horaria del sistema (TZ del .env), para mostrar la hora local de la zona.
+        "time_zone": settings.TIME_ZONE,
         "updated_at": config.updated_at.isoformat() if config.updated_at else None,
     }
 

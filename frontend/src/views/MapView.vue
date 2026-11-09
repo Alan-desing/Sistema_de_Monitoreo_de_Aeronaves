@@ -282,7 +282,7 @@ function positionAge(ac) {
             class="list-group-item list-group-item-action d-flex gap-3 align-items-baseline py-1"
             @click="pick(a.hex)"
           >
-            <span class="small text-body-secondary">{{ clock(a.time) }}</span>
+            <span class="small text-body-secondary">{{ clock(a.time, live.config?.time_zone) }}</span>
             <strong class="flex-grow-1">{{ a.label }}</strong>
             <span class="small">{{ altitudeShort(a.alt_ft) }}</span>
           </button>

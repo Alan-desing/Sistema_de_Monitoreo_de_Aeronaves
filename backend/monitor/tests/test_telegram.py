@@ -4,12 +4,13 @@ from types import SimpleNamespace
 import httpx
 from django.test import SimpleTestCase, override_settings
 
-from monitor.alerts import build_alert, flightradar_url, format_alert_message
+from monitor.alerts import alert_clock, build_alert, flightradar_url, format_alert_message
 from monitor.telegram import MAX_ATTEMPTS, TelegramError, TelegramNotifier, send_message
 
 from .helpers import CNA, NOW, make_aircraft
 
 TOKEN = "123456789:AAH-secreto_del_bot"
+NOW_EPOCH = 1_794_250_800  # 2026-11-09 19:00:00 UTC
 
 
 def config(token=TOKEN, chat="-1001234567890"):
@@ -34,6 +35,14 @@ class MessageTests(SimpleTestCase):
         self.assertIn("Distancia al centro: 3,2 NM", text)
         self.assertRegex(text, r"Hora: \d\d:\d\d:\d\d")
         self.assertIn("Flightradar24: https://www.flightradar24.com/ARG1309", text)
+
+    def test_clock_argentina_only_when_zone_is_in_argentina(self):
+        self.assertEqual(alert_clock(NOW_EPOCH), "16:00:00")
+
+    @override_settings(TIME_ZONE="Europe/Amsterdam")
+    def test_clock_shows_local_and_argentina_time_abroad(self):
+        # 2026-11-09 19:00 UTC: 20:00 en Ámsterdam (UTC+1), 16:00 en Argentina (UTC-3).
+        self.assertEqual(alert_clock(NOW_EPOCH), "20:00:00 (hora local) · 16:00:00 en Argentina")
 
     def test_flightradar_url_falls_back_to_registration_then_position(self):
         by_reg = build_alert(make_aircraft(flight=None), CNA)
