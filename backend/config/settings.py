@@ -28,6 +28,12 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:5173")
+# Dirección pública de la web, para el enlace "Ver en el mapa" de las alertas de
+# Telegram. Si no se define, se usa la primera dirección https de los orígenes CSRF.
+SITE_URL = (
+    os.environ.get("SITE_URL", "").strip()
+    or next((o for o in CSRF_TRUSTED_ORIGINS if o.startswith("https://")), "")
+).rstrip("/")
 
 INSTALLED_APPS = [
     "django.contrib.auth",

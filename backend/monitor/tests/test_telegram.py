@@ -22,19 +22,30 @@ def mock_client(handler):
     return httpx.AsyncClient(transport=httpx.MockTransport(handler))
 
 
-@override_settings(TIME_ZONE="America/Argentina/Buenos_Aires")
+@override_settings(TIME_ZONE="America/Argentina/Buenos_Aires", SITE_URL="https://aviones.example")
 class MessageTests(SimpleTestCase):
     def test_message_content(self):
         alert = build_alert(make_aircraft(dst=3.25, alt=2375, gs=142.2, track=6.7), CNA)
         text = format_alert_message(alert)
-        self.assertIn("Ingreso a ALERTA CNA 10KM", text)
-        self.assertIn("ARG1309 · LV-KNP · B38M", text)
-        self.assertIn("Altitud: 2.375 ft (724 m)", text)
-        self.assertIn("Velocidad: 142 kt", text)
-        self.assertIn("Rumbo: 007°", text)
-        self.assertIn("Distancia al centro: 3,2 NM", text)
+        self.assertIn("INGRESO A ZONA DE ALERTA", text)
+        self.assertIn("Zona: ALERTA CNA 10KM", text)
+        self.assertIn("<b>ARG1309</b>\n<i>LV-KNP · B38M</i>", text)
+        self.assertIn("Altitud: <b>2.375 ft</b> (724 m)", text)
+        self.assertIn("Velocidad: <b>142 kt</b> (263 km/h)", text)
+        self.assertIn("Rumbo: <b>007°</b> N", text)
+        self.assertIn("Distancia al centro: <b>3,2 NM</b> (6,0 km)", text)
         self.assertRegex(text, r"Hora: \d\d:\d\d:\d\d")
-        self.assertIn("Flightradar24: https://www.flightradar24.com/ARG1309", text)
+        self.assertTrue(all(ord(c) < 0x2000 for c in text), "el mensaje no lleva emojis")
+        self.assertIn('<a href="https://aviones.example/?hex=e0b390">Ver en nuestro mapa</a>', text)
+        self.assertIn('<a href="https://www.flightradar24.com/ARG1309">Flightradar24</a>', text)
+        # Va como pie de foto: Telegram corta en 1024 caracteres.
+        self.assertLess(len(text), 1024)
+
+    @override_settings(SITE_URL="")
+    def test_no_site_link_without_site_url(self):
+        text = format_alert_message(build_alert(make_aircraft(), CNA))
+        self.assertNotIn("nuestro mapa", text)
+        self.assertIn("Flightradar24", text)
 
     def test_clock_argentina_only_when_zone_is_in_argentina(self):
         self.assertEqual(alert_clock(NOW_EPOCH), "16:00:00")
@@ -56,7 +67,7 @@ class MessageTests(SimpleTestCase):
     def test_missing_optional_data(self):
         alert = build_alert(make_aircraft(flight=None, registration=None, type=None, gs=None, track=None), CNA)
         text = format_alert_message(alert)
-        self.assertIn("E0B390", text)
+        self.assertIn("<b>E0B390</b>", text)
         self.assertIn("Velocidad: sin dato", text)
         self.assertIn("Rumbo: sin dato", text)
         self.assertEqual(alert["label"], "e0b390")

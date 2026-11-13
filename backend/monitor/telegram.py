@@ -148,7 +148,7 @@ async def send_test_message(config):
         raise TelegramError("Telegram no está configurado (falta el token del bot o el chat id del grupo).")
     alert = demo_alert(config)
     text = (
-        "🧪 <b>MENSAJE DE PRUEBA</b> — no es una alerta real\n\n"
+        "<b>MENSAJE DE PRUEBA</b> — no es una alerta real\n\n"
         + format_alert_message(alert)
     )
     async with tiles_client() as tiles:

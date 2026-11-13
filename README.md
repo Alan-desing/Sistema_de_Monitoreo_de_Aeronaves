@@ -266,6 +266,7 @@ Docker Compose pasa el archivo `.env` al backend; **nunca se copia dentro de la 
 | `DJANGO_ALLOWED_HOSTS` | Nombres con los que se accede al sistema. | `localhost,127.0.0.1` |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | Direcciones desde donde se usa la web. | `http://localhost:5173,http://127.0.0.1:5173` |
 | `TZ` | Zona horaria de los mensajes de alerta. | `America/Argentina/Buenos_Aires` |
+| `SITE_URL` | Dirección pública de la web; el aviso de Telegram enlaza a la aeronave en el mapa. Vacía: la primera `https://` de `DJANGO_CSRF_TRUSTED_ORIGINS`. | vacía |
 | `LOG_LEVEL` | Nivel del log (`DEBUG`, `INFO`, `WARNING`…). | `INFO` |
 | `MONITOR_ENABLED` | `false` levanta la web sin consultar adsb.fi (para depurar). | `true` |
 | `ADSBFI_USER_AGENT` | Identificación que se envía a adsb.fi. | `avion-monitor/0.1 (monitor privado de aeronaves)` |
