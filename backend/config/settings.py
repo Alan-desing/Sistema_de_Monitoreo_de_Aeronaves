@@ -29,10 +29,11 @@ DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:5173")
 # Dirección pública de la web, para el enlace "Ver en el mapa" de las alertas de
-# Telegram. Si no se define, se usa la primera dirección https de los orígenes CSRF.
+# Telegram. Si no se define, se usa la ÚLTIMA dirección https de los orígenes CSRF:
+# las copias por país heredan la lista de Argentina y agregan la propia al final.
 SITE_URL = (
     os.environ.get("SITE_URL", "").strip()
-    or next((o for o in CSRF_TRUSTED_ORIGINS if o.startswith("https://")), "")
+    or next((o for o in reversed(CSRF_TRUSTED_ORIGINS) if o.startswith("https://")), "")
 ).rstrip("/")
 
 INSTALLED_APPS = [
