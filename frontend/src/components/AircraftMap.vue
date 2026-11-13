@@ -190,23 +190,77 @@ const CompassControl = L.Control.extend({
   },
 })
 
-// Opción para celulares: el mapa sigue la orientación del dispositivo.
+// Celulares: el mapa sigue la brújula del dispositivo (como Google Maps). Arranca
+// activado; si el usuario lo apaga con el botón, se recuerda.
 const gyroOn = ref(false)
+const GYRO_PREF = 'avion.gyro'
+const ORIENTATION_EVENT = 'ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation'
+const needsPermission = () => typeof window.DeviceOrientationEvent?.requestPermission === 'function'
 
-async function setGyro(m, on) {
-  if (on && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    // iOS pide permiso explícito, y solo dentro de un gesto del usuario.
+// Rumbo hacia donde apunta la parte de ARRIBA DE LA PANTALLA, en grados horarios
+// desde el norte; null si el navegador no da una orientación respecto del norte.
+function deviceHeading(e, screenAngle) {
+  let h
+  if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading // iOS
+  else if (e.absolute && typeof e.alpha === 'number') h = 360 - e.alpha // Android: alpha es antihorario
+  else return null // orientación relativa (arbitraria): no sirve como brújula
+  // Celular acostado: la pantalla gira y su "arriba" es otro borde del equipo.
+  return (((h + screenAngle) % 360) + 360) % 360
+}
+
+const screenAngle = () => screen.orientation?.angle ?? window.orientation ?? 0
+
+async function setGyro(m, on, { remember = false } = {}) {
+  if (remember) {
     try {
-      if ((await DeviceOrientationEvent.requestPermission()) !== 'granted') on = false
+      localStorage.setItem(GYRO_PREF, on ? 'on' : 'off')
     } catch {
-      on = false
+      /* sin almacenamiento */
     }
   }
-  if (on) m.compassBearing.enable()
-  else m.compassBearing.disable()
-  // El handler se desactiva solo si el navegador no da orientación.
-  gyroOn.value = m.compassBearing.enabled()
+  if (on && needsPermission()) {
+    // iOS pide permiso explícito, y solo dentro de un gesto del usuario. La
+    // respuesta no decide: algunos navegadores dicen "denied" y aun así mandan
+    // datos. Si no llegan lecturas, el temporizador de abajo lo apaga.
+    try {
+      await window.DeviceOrientationEvent.requestPermission()
+    } catch {
+      /* sin gesto o sin soporte */
+    }
+  }
+  if (m._gyro) {
+    window.removeEventListener(ORIENTATION_EVENT, m._gyro.listener)
+    clearTimeout(m._gyro.timer)
+    m._gyro = null
+  }
+  if (on) {
+    let got = false
+    const listener = L.Util.throttle((e) => {
+      const h = deviceHeading(e, screenAngle())
+      if (h === null) return
+      got = true
+      m.setBearing(-h)
+    }, 100)
+    window.addEventListener(ORIENTATION_EVENT, listener)
+    // Sin lecturas con norte en 3 s (equipo sin brújula): se apaga solo.
+    const timer = setTimeout(() => !got && setGyro(m, false), 3000)
+    m._gyro = { listener, timer }
+  }
+  gyroOn.value = on
   m.fire('gyrochange')
+}
+
+function startGyroIfWanted(m) {
+  let pref = null
+  try {
+    pref = localStorage.getItem(GYRO_PREF)
+  } catch {
+    /* sin almacenamiento */
+  }
+  if (pref === 'off') return
+  // iOS solo da permiso dentro de un gesto: se pide con el primer toque al mapa.
+  if (needsPermission()) m.getContainer().addEventListener('touchend', () => setGyro(m, true), { once: true })
+  else setGyro(m, true)
 }
 
 const GyroControl = L.Control.extend({
@@ -228,7 +282,7 @@ const GyroControl = L.Control.extend({
     L.DomEvent.disableClickPropagation(div)
     L.DomEvent.on(btn, 'click', (e) => {
       L.DomEvent.preventDefault(e)
-      setGyro(map, !gyroOn.value)
+      setGyro(map, !gyroOn.value, { remember: true })
     })
     return div
   },
@@ -311,7 +365,7 @@ onMounted(() => {
     rotate: true,
     rotateControl: false, // se usa la rosa de los vientos propia
     touchRotate: true, // giro con dos dedos
-    compassBearing: false, // giroscopio apagado hasta que el usuario lo active
+    compassBearing: false, // el de leaflet-rotate no corrige el celular acostado: se usa setGyro
   })
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>')
   map.attributionControl.addAttribution(
@@ -328,7 +382,10 @@ onMounted(() => {
   L.control.layers(layers, null, { position: 'topright' }).addTo(map)
   L.control.scale({ metric: true, imperial: false, maxWidth: 160 }).addTo(map)
   new CompassControl().addTo(map)
-  if (hasGyro) new GyroControl().addTo(map)
+  if (hasGyro) {
+    new GyroControl().addTo(map)
+    startGyroIfWanted(map)
+  }
   map.on('baselayerchange', (e) => {
     try {
       localStorage.setItem('avion.baseLayer', e.layer._avionId)
@@ -345,8 +402,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  map?.compassBearing?.disable()
-  gyroOn.value = false
+  if (map) setGyro(map, false)
   map?.remove()
   map = null
   markers.clear()
