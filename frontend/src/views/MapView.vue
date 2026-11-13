@@ -1,6 +1,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AircraftMap from '../components/AircraftMap.vue'
+import { SHAPES, shapeOf } from '../aircraftShapes'
 import { live } from '../live'
 import {
   altitude,
@@ -136,6 +138,25 @@ function consumeFocus() {
 watch(() => live.focusHex, consumeFocus, { flush: 'post' })
 onMounted(consumeFocus)
 
+// Enlace desde la alerta de Telegram: /?hex=<código>. Se selecciona y se centra
+// la aeronave en cuanto aparece en los datos (llegan por WebSocket después).
+const route = useRoute()
+const router = useRouter()
+let linkedHex = typeof route.query.hex === 'string' ? route.query.hex.toLowerCase() : null
+if (linkedHex) {
+  live.selectedHex = linkedHex
+  watch(
+    () => live.aircraft,
+    (list) => {
+      if (!linkedHex || !list.some((a) => a.hex === linkedHex)) return
+      live.focusHex = linkedHex
+      linkedHex = null
+      router.replace({ query: {} })
+    },
+    { immediate: true },
+  )
+}
+
 function positionAge(ac) {
   if (!live.status?.last_update) return ''
   const age = Math.max(0, live.status.last_update - ac.timestamp)
@@ -185,6 +206,12 @@ function positionAge(ac) {
             </div>
           </div>
         </div>
+        <!-- Formas de los íconos según el tipo de aeronave (categoría ADS-B). -->
+        <div class="shape-legend mt-2 small">
+          <span v-for="(s, key) in SHAPES" :key="key" class="d-inline-flex align-items-center gap-1">
+            <span class="shape-legend-icon" v-html="s.svg"></span>{{ s.label }}
+          </span>
+        </div>
       </section>
 
       <section class="p-3 border-bottom">
@@ -197,6 +224,8 @@ function positionAge(ac) {
             <span v-if="selected.inside" class="badge text-bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>EN LA ZONA</span>
           </div>
           <dl class="row small mb-0">
+            <dt class="col-4 fw-normal text-body-secondary">Tipo</dt>
+            <dd class="col-8 mb-1 fw-semibold">{{ SHAPES[shapeOf(selected)].label }}</dd>
             <dt class="col-4 fw-normal text-body-secondary">Altitud</dt>
             <dd class="col-8 mb-1 fw-semibold">{{ altitude(selected.alt_baro) }}</dd>
             <dt class="col-4 fw-normal text-body-secondary">Velocidad</dt>
@@ -299,6 +328,16 @@ function positionAge(ac) {
 </template>
 
 <style scoped>
+.shape-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.shape-legend-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
+  color: var(--bs-primary);
+}
 .map-layout {
   height: 100%;
 }
