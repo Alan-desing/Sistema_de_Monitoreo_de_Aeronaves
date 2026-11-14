@@ -10,7 +10,9 @@ const router = createRouter({
   linkExactActiveClass: 'active',
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { public: true, title: 'Ingresar' } },
-    { path: '/', name: 'map', component: MapView, meta: { title: 'Mapa' } },
+    // /<código hex> abre el mapa con esa aeronave seleccionada (enlace de las
+    // alertas de Telegram). Los códigos de adsb.fi pueden empezar con "~".
+    { path: '/:hex(~?[0-9a-fA-F]{6})?', name: 'map', component: MapView, meta: { title: 'Mapa' } },
     {
       path: '/usuarios',
       name: 'users',

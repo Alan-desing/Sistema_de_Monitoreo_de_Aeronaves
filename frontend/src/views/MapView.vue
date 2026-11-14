@@ -138,11 +138,13 @@ function consumeFocus() {
 watch(() => live.focusHex, consumeFocus, { flush: 'post' })
 onMounted(consumeFocus)
 
-// Enlace desde la alerta de Telegram: /?hex=<código>. Se selecciona y se centra
-// la aeronave en cuanto aparece en los datos (llegan por WebSocket después).
+// Enlace desde la alerta de Telegram: /<código>. Se selecciona y se centra la
+// aeronave en cuanto aparece en los datos (llegan por WebSocket después).
+// También se acepta el formato anterior, /?hex=<código>, de alertas ya enviadas.
 const route = useRoute()
 const router = useRouter()
-let linkedHex = typeof route.query.hex === 'string' ? route.query.hex.toLowerCase() : null
+const hexParam = route.params.hex || route.query.hex
+let linkedHex = typeof hexParam === 'string' ? hexParam.toLowerCase() : null
 if (linkedHex) {
   live.selectedHex = linkedHex
   watch(
@@ -151,7 +153,7 @@ if (linkedHex) {
       if (!linkedHex || !list.some((a) => a.hex === linkedHex)) return
       live.focusHex = linkedHex
       linkedHex = null
-      router.replace({ query: {} })
+      router.replace('/')
     },
     { immediate: true },
   )

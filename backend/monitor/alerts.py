@@ -63,7 +63,7 @@ def site_url(alert):
     """Enlace a nuestra web con la aeronave seleccionada, o None si no hay SITE_URL."""
     if not settings.SITE_URL:
         return None
-    return f"{settings.SITE_URL}/?hex={quote(str(alert['hex']))}"
+    return f"{settings.SITE_URL}/{quote(str(alert['hex']))}"
 
 
 def _integer(value):

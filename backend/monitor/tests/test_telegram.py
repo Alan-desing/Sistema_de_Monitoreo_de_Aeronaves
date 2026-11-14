@@ -36,7 +36,7 @@ class MessageTests(SimpleTestCase):
         self.assertIn("Distancia al centro: <b>3,2 NM</b> (6,0 km)", text)
         self.assertRegex(text, r"Hora: \d\d:\d\d:\d\d")
         self.assertTrue(all(ord(c) < 0x2000 for c in text), "el mensaje no lleva emojis")
-        self.assertIn('<a href="https://aviones.example/?hex=e0b390">Ver en nuestro mapa</a>', text)
+        self.assertIn('<a href="https://aviones.example/e0b390">Ver en nuestro mapa</a>', text)
         self.assertIn('<a href="https://www.flightradar24.com/ARG1309">Flightradar24</a>', text)
         # Va como pie de foto: Telegram corta en 1024 caracteres.
         self.assertLess(len(text), 1024)
